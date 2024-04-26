@@ -1,0 +1,41 @@
+.data
+input_string: .space 100      # Chu?i ?? l?u ??u vào
+output_array: .space 120     # M?ng ?? l?u các s? (t?i ?a 30 s?, m?i s? chi?m 4 byte)
+
+.text
+main:
+    # Nh?p chu?i t? bàn phím
+    li $v0, 8            # syscall 8: ??c chu?i
+    la $a0, input_string  # ??a ch? c?a chu?i ??u vào
+    li $a1, 100           # ?? dài t?i ?a c?a chu?i
+    syscall
+
+    # L?p qua chu?i ??u vào ?? ??c t?ng s?
+    la $t0, input_string  # ??a ch? b?t ??u c?a chu?i ??u vào
+    la $t1, output_array # ??a ch? b?t ??u c?a m?ng s?
+    li $t4, 0            # Bi?n ??m s? ?ã nh?p
+
+read_loop:
+    lb $t2, 0($t0)       # ??c m?t ký t? t? chu?i ??u vào
+    beq $t2, 0, end_read  # N?u g?p ký t? k?t thúc chu?i (\0) thì k?t thúc
+    beq $t2, 32, skip_space # N?u là d?u cách thì b? qua
+
+    # Chuy?n ký t? thành s?
+    sub $t2, $t2, 48     # Chuy?n t? mã ASCII sang s? nguyên
+    lw $t3, 0($t1)       # ??c s? hi?n t?i t? m?ng
+    sll $t3, $t3, 3      # Nhân 4 ?? d?ch bit sang trái 2 l?n (t??ng ???ng * 4)
+    add $t3, $t3, $t2    # Thêm s? m?i vào m?ng
+    sw $t3, 0($t1)       # L?u s? vào m?ng
+    addi $t0, $t0, 1     # T?ng con tr? c?a chu?i ??u vào
+    addi $t1, $t1, 4     # D?ch con tr? c?a m?ng 4 byte (kích th??c c?a m?i s?)
+    addi $t4, $t4, 1     # T?ng bi?n ??m s? ?ã nh?p
+    beq $t4, 30, end_read # N?u ?ã nh?p ?? 30 s? thì k?t thúc
+    j read_loop
+
+skip_space:
+    addi $t0, $t0, 1     # B? qua d?u cách
+    j read_loop
+end_read:
+    # K?t thúc ch??ng trình
+    li $v0, 10            # syscall 10: K?t thúc ch??ng trình
+    syscall
