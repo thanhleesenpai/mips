@@ -1,28 +1,6 @@
-.eqv MONITOR_SCREEN 0x10010000 #Dia chi bat dau cua bo nho man hinh
-.eqv RED 0x00FF0000 #Cac gia tri mau thuong su dung
-.eqv GREEN 0x0000FF00
-.eqv BLUE 0x000000FF
-.eqv WHITE 0x00FFFFFF
-.eqv YELLOW 0x00FFFF00
-.text
- li $k0, MONITOR_SCREEN #Nap dia chi bat dau cua man hinh
- li $t0, RED
- sw $t0, 0($k0)
- nop
- li $t0, GREEN
- sw $t0, 4($k0)
- nop
- li $t0, BLUE
- sw $t0, 8($k0)
- nop
- li $t0, WHITE
- sw $t0, 12($k0)
- nop
+li $v0, 42  # 42 is system call code to generate random int
+li $a1, 100 # $a1 is where you set the upper bound
+syscall     # your generated number will be at $a0
 
- li $t0, YELLOW
- sw $t0, 32($k0)
- nop
-
- li $t0, WHITE
- lb $t0, 42($k0)
- nop
+li $v0, 1   # 1 is the system call code to show an int number
+syscall     # as I said your generated number is at $a0, so it will be printed

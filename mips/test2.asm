@@ -1,113 +1,59 @@
-.eqv HEADING 0xffff8010 # Integer: An angle between 0 and 359
- # 0 : North (up)
-# 90: East (right)
-# 180: South (down)
-# 270: West (left)
-.eqv MOVING 0xffff8050 # Boolean: whether or not to move
-.eqv LEAVETRACK 0xffff8020 # Boolean (0 or non-0):
- # whether or not to leave a track
-.eqv WHEREX 0xffff8030 # Integer: Current x-location of MarsBot
-.eqv WHEREY 0xffff8040 # Integer: Current y-location of MarsBot
+#Laboratory Exercise 7, Home Assignment 4
+.data
+Message: .asciiz "Ket qua tinh giai thua la: "
 .text
-main: jal TRACK # draw track line
- nop
- addi $a0, $zero, 90 # Marsbot rotates 90* and start running
- jal ROTATE
- nop
- jal GO
- nop
-sleep1: addi $v0,$zero,32 # Keep running by sleeping in 1000 ms
- li $a0,1000
+main: jal WARP
+
+print: add $a1, $v0, $zero # $a0 = result from N!
+ li $v0, 56
+ la $a0, Message
  syscall
-
- jal UNTRACK # keep old track
- nop
- jal TRACK # and draw new track line
- nop
-goDOWN: addi $a0, $zero, 180 # Marsbot rotates 180*
- jal ROTATE
- nop
-
-sleep2: addi $v0,$zero,32 # Keep running by sleeping in 2000 ms
- li $a0,2000
+quit: li $v0, 10 #terminate
  syscall
- jal UNTRACK # keep old track
- nop
- jal TRACK # and draw new track line
- nop
-goLEFT: addi $a0, $zero, 270 # Marsbot rotates 270*
- jal ROTATE
- nop
-
-sleep3: addi $v0,$zero,32 # Keep running by sleeping in 1000 ms
- li $a0,1000
- syscall
- jal UNTRACK # keep old track
- nop
- jal TRACK # and draw new track line
+endmain:
+#---------------------------------------------------------------------
+#Procedure WARP: assign value and call FACT
+#---------------------------------------------------------------------
+WARP: sw $fp,-4($sp) #save frame pointer (1)
+ addi $fp,$sp,0 #new frame pointer point to the top (2)
+ addi $sp,$sp,-8 #adjust stack pointer (3)
+ sw $ra,0($sp) #save return address (4)
+ li $a0,6 #load test input N
+ jal FACT #call fact procedure
  nop
 
-goASKEW:addi $a0, $zero, 120 # Marsbot rotates 120*
- jal ROTATE
- nop
+ lw $ra,0($sp) #restore return address (5)
+ addi $sp,$fp,0 #return stack pointer (6)
+ lw $fp,-4($sp) #return frame pointer (7)
+ jr $ra
+wrap_end:
+#---------------------------------------------------------------------
+#Procedure FACT: compute N!
+#param[in] $a0 integer N
+#return $v0 the largest value
+#---------------------------------------------------------------------
+FACT: sw $fp,-4($sp) #save frame pointer
+ addi $fp,$sp,0 #new frame pointer point to stack’stop
+ addi $sp,$sp,-12 #allocate space for $fp,$ra,$a0 instack
+ sw $ra,4($sp) #save return address
+ sw $a0,0($sp) #save $a0 register
 
-sleep4: addi $v0,$zero,32 # Keep running by sleeping in 2000 ms
- li $a0,2000
- syscall
-
- jal UNTRACK # keep old track
+ slti $t0,$a0,2 #if input argument N < 2
+ beq $t0,$zero,recursive#if it is false ((a0 = N) >=2)
  nop
- jal TRACK # and draw new track line
+ li $v0,1 #return the result N!=1
+ j done
  nop
-end_main:
-#-----------------------------------------------------------
-# GO procedure, to start running
-# param[in] none
-#-----------------------------------------------------------
-GO: li $at, MOVING # change MOVING port
- addi $k0, $zero,1 # to logic 1,
- sb $k0, 0($at) # to start running
+recursive:
+ addi $a0,$a0,-1 #adjust input argument
+ jal FACT #recursive call
  nop
- jr $ra
- nop
-#-----------------------------------------------------------
-# STOP procedure, to stop running
-# param[in] none
-#-----------------------------------------------------------
-STOP: li $at, MOVING # change MOVING port to 0
- sb $zero, 0($at) # to stop
- nop
- jr $ra
- nop
-#-----------------------------------------------------------
-# TRACK procedure, to start drawing line
-# param[in] none
-#-----------------------------------------------------------
-TRACK: li $at, LEAVETRACK # change LEAVETRACK port
- addi $k0, $zero,1 # to logic 1,
- sb $k0, 0($at) # to start tracking
- nop
- jr $ra
- nop
-#-----------------------------------------------------------
-# UNTRACK procedure, to stop drawing line
-# param[in] none
-#-----------------------------------------------------------
-UNTRACK:li $at, LEAVETRACK # change LEAVETRACK port to 0
- sb $zero, 0($at) # to stop drawing tail
- nop
- jr $ra
- nop
-#-----------------------------------------------------------
-# ROTATE procedure, to rotate the robot
-# param[in] $a0, An angle between 0 and 359
-# 0 : North (up)
-# 90: East (right)
-# 180: South (down)
-# 270: West (left)
-#-----------------------------------------------------------
-ROTATE: li $at, HEADING # change HEADING port
- sw $a0, 0($at) # to rotate robot
- nop
- jr $ra
- nop
+ lw $v1,0($sp) #load a0
+ mult $v1,$v0 #compute the result
+ mflo $v0
+done: lw $ra,4($sp) #restore return address
+ lw $a0,0($sp) #restore a0
+ addi $sp,$fp,0 #restore stack pointer
+ lw $fp,-4($sp) #restore frame pointer
+ jr $ra #jump to calling
+fact_end:
